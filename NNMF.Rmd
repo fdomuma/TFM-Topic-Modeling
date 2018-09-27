@@ -1,0 +1,42 @@
+---
+title: "NNMF"
+author: "Fernando Muñoz"
+date: "27 de septiembre de 2018"
+output: html_document
+---
+
+# NNMF Manteniendo el número de temas del capítulo STM
+
+## Paquetes
+
+```
+library(dplyr)
+library(NMF)
+library(ggplot2)
+```
+
+
+## Se crea tabla de contingencia con los valores de TF-IDF como input
+
+```
+# Creamos un contenedor vacío en el que hacer la tabla de tf-idf
+tf.idf.m<-matrix(nrow = length(unique(elpais$id)), 
+                 ncol = length(unique(elpais$word)))
+tf.idf.m<-as.data.frame(tf.idf.m)
+colnames(tf.idf.m)<-unique(elpais$word)
+rownames(tf.idf.m)<-c(1:length(elpais$id))
+
+# Rellenamos la tabla en las posiciones correspondientes
+for (i in 1:length(elpais$word)){
+  positiony<-match(elpais$word[i], colnames(tf.idf.m))
+  positionx<-match(elpais$id[i], rownames(tf.idf.m))
+  tf.idf.m[positionx, positiony]<-elpais$tf_idf[i]
+}
+
+tf.idf.m[is.na(tf.idf.m)]<-0
+tf.idf.mt<-t(tf.idf.m)
+
+rm(tf.idf.m)
+```
+
+## 
