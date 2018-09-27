@@ -16,21 +16,23 @@ library(ggplot2)
 ```
 
 
+
+
 ## Se crea tabla de contingencia con los valores de TF-IDF como input
 
 ```
 # Creamos un contenedor vacío en el que hacer la tabla de tf-idf
-tf.idf.m<-matrix(nrow = length(unique(elpais$id)), 
-                 ncol = length(unique(elpais$word)))
+tf.idf.m<-matrix(nrow = length(unique(ElPais$id)), 
+                 ncol = length(unique(ElPais$word)))
 tf.idf.m<-as.data.frame(tf.idf.m)
-colnames(tf.idf.m)<-unique(elpais$word)
-rownames(tf.idf.m)<-c(1:length(elpais$id))
+colnames(tf.idf.m)<-unique(ElPais$word)
+rownames(tf.idf.m)<-c(1:length(unique(ElPais$id)))
 
 # Rellenamos la tabla en las posiciones correspondientes
-for (i in 1:length(elpais$word)){
-  positiony<-match(elpais$word[i], colnames(tf.idf.m))
-  positionx<-match(elpais$id[i], rownames(tf.idf.m))
-  tf.idf.m[positionx, positiony]<-elpais$tf_idf[i]
+for (i in 1:length(ElPais$word)){
+  positiony<-match(ElPais$word[i], colnames(tf.idf.m))
+  positionx<-match(ElPais$id[i], rownames(tf.idf.m))
+  tf.idf.m[positionx, positiony]<-ElPais$tf_idf[i]
 }
 
 tf.idf.m[is.na(tf.idf.m)]<-0
@@ -39,4 +41,38 @@ tf.idf.mt<-t(tf.idf.m)
 rm(tf.idf.m)
 ```
 
-## 
+
+## Se corre el NMF
+
+```
+res <- nmf(tf.idf.mt, 3, "KL") 
+matrixW <- basis(res)
+matrixW.df <- as.data.frame(matrixW)
+
+matrixW.df$total <- rowSums(matrixW.df)
+matrixW.df$word<-rownames(matrixW.df)
+colnames(matrixW.df) <- c("doc1","doc2","doc3","total","word")
+matrixW.df <-matrixW.df[order(-matrixW.df$total),] 
+
+wordMatrix = as.data.frame(matrixW)
+wordMatrix$word<-rownames(wordMatrix)
+colnames(wordMatrix) <- c("doc1","doc2","doc3","word")
+```
+
+## Extraer temas
+
+```
+# Tema 1
+newdata <-wordMatrix[order(-wordMatrix$doc1),] 
+d <- newdata
+df <- as.data.frame(cbind(d[1:10,]$word, as.numeric(d[1:10,]$doc1)))
+colnames(df)<- c("Word","Frequency")
+
+# for ggplot to understand the order of words, you need to specify factor order
+df$Word <- factor(df$Word, levels = df$Word[order(df$Frequency)])
+
+ggplot(df, aes(x=Word, y=Frequency)) + 
+  geom_bar(stat="identity", fill="lightgreen", color="grey50")+
+  coord_flip()+
+  ggtitle("Topic 1")
+```
