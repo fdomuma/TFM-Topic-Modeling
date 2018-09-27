@@ -1,0 +1,62 @@
+---
+title: "TF-IDF"
+author: "Fernando Muñoz"
+date: "27 de septiembre de 2018"
+output: html_document
+---
+
+# TF-IDF sin stopwords y con metadatos
+
+## Paquetes
+```
+library(dplyr)
+library(tidytext)
+library(tm)
+library(stopwords)
+```
+
+## Filtrado de stopwords
+```
+# Creo las stopwords que vamos a eliminar y el corpus
+sw<-c(data_stopwords_stopwordsiso$es, data_stopwords_stopwordsiso$en)
+
+noticias.df$articulo<-gsub('[[:punct:] ]+',' ', noticias.df$articulo)
+noticias.df$articulo<-gsub('[[:digit:] ]+',' ', noticias.df$articulo)
+noticias.df$articulo<-tolower(noticias.df$articulo)
+noticias.df$articulo<-removeWords(noticias.df$articulo, sw)
+```
+
+## TF, IDF y TF-IDF
+
+```
+# Añado un id que me permita nombrar registros concretos
+noticias.df<-data.frame(c(1:length(noticias.df$articulo)), noticias.df)
+colnames(noticias.df)[1]<-"id"
+
+noticias.df$articulo<-as.character(noticias.df$articulo)
+
+# Conteo de palabras
+noticias.df.tf.idf <- unnest_tokens(noticias.df, word, articulo)
+noticias.df.tf.idf <- count(noticias.df.tf.idf, id, medio, word, autor, sort = TRUE)
+
+# Frecuencia y total de palabras 
+noticias.df.total <- noticias.df.tf.idf %>% group_by(id) %>% summarize(total = sum(n))
+noticias.df.tf.idf <- left_join(noticias.df.tf.idf, noticias.df.total)
+rm(noticias.df.total)
+
+#tf-idf
+noticias.df.tf.idf <- noticias.df.tf.idf %>%
+  bind_tf_idf(word, id, n)
+noticias.df.tf.idf<-noticias.df.tf.idf %>%
+  arrange(desc(tf_idf))
+```
+
+## Código para filtrar por atributo
+
+```
+## Con el siguiente c?digo se pueden ver filtrados
+autor<-autor.palabras.tfidf.df %>%   
+  filter(autor == "") %>%
+  arrange(desc(tf_idf)) %>%
+  head(n=10L)
+```
